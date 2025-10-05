@@ -1,5 +1,5 @@
 /**
- * 模拟延迟的工具函数
+ * 模拟延迟 的工具函数
  * @param ms - 延迟毫秒数
  * @returns Promise<void>
  */
