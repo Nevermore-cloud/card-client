@@ -64,7 +64,8 @@ const mainItems = [
 ];
 const subItems = [
   { icon: "apps-o", text: "预设卡组", path: "presets" },
-  { icon: "setting-o", text: "设置", path: "settings" },
+  { icon: "contact", text: "个人中心", path: "mine" },
+  // { icon: "setting-o", text: "设置", path: "settings" },
 ];
 
 const goTo = (path: string) => {

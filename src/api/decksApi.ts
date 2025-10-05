@@ -106,31 +106,85 @@ export const updateMyDecksInfoApi = async (
 /**
  * 往卡组添加卡牌
  */
-export const addCardToMyDecksApi = async (
+export interface AddCardsResult {
+  success: boolean; // 是否添加成功
+  addedIds: number[]; // 成功添加的卡牌 id
+  failedIds: number[]; // 因限制未添加的卡牌 id
+  error?: string; // 出现错误时的描述
+  data?: UserDeck | null; // 返回更新后的卡组数据
+}
+export const addCardsToMyDecksApi = async (
   deckId: number,
-  cardId: number
-): Promise<{ data: UserDeck | null }> => {
+  cardIds: number[]
+): Promise<AddCardsResult> => {
+  let errorInfo = "";
   await delay(200);
-  const decks = getStoredMyDecks();
-  const idx = decks.findIndex(
-    (d) => d.id === deckId && d.entityType === "userDeck"
-  );
-  if (idx === -1) return { data: null };
 
-  const deck = decks[idx] as UserDeck;
+  try {
+    const decks = getStoredMyDecks();
+    const idx = decks.findIndex(
+      (d) => d.id === deckId && d.entityType === "userDeck"
+    );
+    if (idx === -1) {
+      return {
+        success: false,
+        addedIds: [],
+        failedIds: cardIds,
+        error: "卡组不存在",
+        data: null,
+      };
+    }
 
-  // TODO: 如果未来需要限制同一卡牌最多 3 张，可启用以下逻辑
-  // const count = deck.cardIds.filter(id => id === cardId).length;
-  // if (count >= 3) {
-  //   throw new Error("同一卡牌最多 3 张");
-  // }
+    const deck = decks[idx] as UserDeck;
 
-  deck.cardIds.push(cardId); // 允许重复，目前无限制
+    const addedIds: number[] = [];
+    const failedIds: number[] = [];
 
-  decks[idx] = deck;
-  setStoredMyDecks(decks);
+    for (const id of cardIds) {
+      if (deck.cardIds.length >= 15) {
+        //卡组上限
+        failedIds.push(id); // 超过 15 张不再添加
+        errorInfo = "卡组卡牌数达到上限，最多15张";
+        continue;
+      }
 
-  return { data: deck };
+      // --- 注释掉的查重限制 ---
+      // const count = deck.cardIds.filter((cid) => cid === id).length;
+      // if (count >= 3) {
+      //   failedIds.push(id);
+      //   continue;
+      // }
+
+      deck.cardIds.push(id); // 可以重复添加
+      addedIds.push(id);
+    }
+
+    decks[idx] = deck;
+    setStoredMyDecks(decks);
+
+    if (failedIds.length === 0 && addedIds.length > 0) {
+      errorInfo = "添加成功";
+    } else if (failedIds.length > 0 && addedIds.length > 0) {
+      errorInfo = "部分卡牌添加成功，卡组卡牌达到上限";
+    } else if (failedIds.length > 0 && addedIds.length === 0) {
+      errorInfo = "卡牌添加失败，卡组卡牌达到上限";
+    }
+    return {
+      success: addedIds.length > 0,
+      addedIds,
+      failedIds,
+      error: errorInfo,
+      data: deck,
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      addedIds: [],
+      failedIds: cardIds,
+      error: err?.message || "未知错误",
+      data: null,
+    };
+  }
 };
 
 /**
@@ -164,7 +218,7 @@ export const removeCardFromMyDecksApi = async (
     return { data: null, success: false };
   }
 
-  // 再校验 index 是否有效且对应的确是该卡牌
+  // 再校验 index 是否有效且对应的确是该卡牌  这里是根据index删除而不是id
   // error: "卡牌序号不正确或与 cardId 不匹配"
   if (
     cardIndex < 0 ||
@@ -183,6 +237,12 @@ export const removeCardFromMyDecksApi = async (
   return { data: deck, success: true };
 };
 
+// 系统预组
+// export const getPresetsCards=async(): Promise<{
+
+// }>=>{
+
+// }
 /**
  * 进入卡组详情时，获取最新的卡组信息（主要是为了拿到最新的卡牌列表）
  */

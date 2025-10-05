@@ -18,4 +18,5 @@ export interface CardType {
   description: string;
   entityType?: "card"; // 默认就是卡牌
   cardCategory?: "monster" | "spell" | "trap" | "other"; // 默认 "other"
+  isSelected?: false;
 }

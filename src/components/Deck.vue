@@ -19,38 +19,59 @@
     </div>
 
     <!-- 操作按钮 -->
-    <div class="deck-actions" v-if="route.path === '/my-decks'">
+    <div class="deck-actions">
+      <van-icon
+        name="add"
+        size="18"
+        class="action-btn"
+        @click.stop="handleAdd"
+        v-if="showAdd"
+      />
       <van-icon
         name="edit"
         size="18"
         class="action-btn"
         @click.stop="handleEdit"
+        v-if="showEdit"
       />
       <van-icon
         name="delete"
         size="18"
         class="action-btn"
         @click.stop="handleDelete"
+        v-if="showDel"
       />
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-import type { UserDeck } from "@/types/deck";
+import type { UserDeck, PresetDeck, DeckType } from "@/types/deck";
 import { useRoute } from "vue-router";
 
 // 获取当前路由对象
 const route = useRoute();
 console.log("当前路由：", route.fullPath);
 
-const props = defineProps<{ deck: UserDeck }>();
+// const props = defineProps<{ deck: UserDeck }>();
+const props = defineProps<{
+  deck: DeckType;
+  showAdd?: boolean;
+  showEdit?: boolean;
+  showDel?: boolean;
+}>();
 
 const emit = defineEmits<{
-  (e: "view", deck: UserDeck): void;
+  (e: "view", deck: DeckType): void;
   (e: "edit", deck: UserDeck): void;
   (e: "delete", deck: UserDeck): void;
+  (e: "add", deck: PresetDeck): void;
 }>();
+
+// 类型守卫
+const isUserDeck = (d: DeckType): d is UserDeck => d.entityType === "userDeck";
+const isPresetDeck = (d: DeckType): d is PresetDeck =>
+  d.entityType === "presetDeck";
 
 const handleView = () => {
   // console.log("点击卡组：", props.deck);
@@ -59,12 +80,20 @@ const handleView = () => {
 
 const handleEdit = () => {
   // console.log("编辑卡组：", props.deck);
+  if (!isUserDeck(props.deck)) return; // 或者提示不可编辑
   emit("edit", props.deck);
 };
 
 const handleDelete = () => {
   // console.log("删除卡组：", props.deck);
+  if (!isUserDeck(props.deck)) return; // 或者提示不可编辑
   emit("delete", props.deck);
+};
+
+// 将预设卡组添加到我的卡组中
+const handleAdd = () => {
+  if (!isPresetDeck(props.deck)) return; // 如果不是预设卡组，就不触发
+  emit("add", props.deck);
 };
 </script>
 

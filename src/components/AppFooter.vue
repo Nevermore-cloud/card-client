@@ -7,9 +7,7 @@
     <van-tabbar-item icon="notes-o" @click="goTo('cards')"
       >卡牌库</van-tabbar-item
     >
-    <van-tabbar-item icon="setting-o" @click="goTo('settings')"
-      >设置</van-tabbar-item
-    >
+    <van-tabbar-item icon="contact" @click="goTo('mine')">我的</van-tabbar-item>
   </van-tabbar>
 </template>
 
@@ -25,7 +23,7 @@ const routeToIndex: Record<string, number> = {
   "/": 0,
   "/my-decks": 1,
   "/cards": 2,
-  "/settings": 3,
+  "/mine": 3,
 };
 
 const active = computed({

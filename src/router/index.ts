@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from "vue-router";
 import type { RouteRecordRaw } from "vue-router";
+import { useUserStore } from "@/stores/user";
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -26,9 +27,28 @@ const routes: Array<RouteRecordRaw> = [
     meta: { showFooter: false, showHeader: false }, //不显示头部导航和底部导航
   }, //预设卡组
   {
+    path: "/presets/:id",
+    name: "PresetsDeckDetail",
+    component: () => import("@/views/PresetDeckDetail.vue"),
+    meta: { showFooter: false, showHeader: false }, //不显示头部导航和底部导航
+  }, //预设卡组详情
+  {
     path: "/my-decks/:id",
     name: "MyDeckDetail",
     component: () => import("@/views/MyDeckDetail.vue"),
+    meta: { showFooter: false, showHeader: false }, //不显示头部导航和底部导航
+  },
+  // 用户个人中心页面
+  {
+    path: "/mine",
+    name: "Mine",
+    component: () => import("@/views/Mine.vue"),
+  },
+  // 登录
+  {
+    path: "/login",
+    name: "Login",
+    component: () => import("@/views/Login.vue"),
     meta: { showFooter: false, showHeader: false }, //不显示头部导航和底部导航
   },
   {
@@ -42,6 +62,25 @@ const routes: Array<RouteRecordRaw> = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
+});
+
+// 路由守卫：未登录时拦截
+router.beforeEach((to, from, next) => {
+  const userStore = useUserStore();
+  // 确保刷新时能恢复
+  if (!userStore.user) {
+    userStore.loadFromStorage();
+  }
+
+  const publicPages = ["/", "/login"]; // 白名单页面
+  const isPublic = publicPages.includes(to.path);
+
+  if (!isPublic && !userStore.user) {
+    // 没登录又想去受保护页面 → 跳转登录
+    return next("/login");
+  }
+
+  next();
 });
 
 export default router;

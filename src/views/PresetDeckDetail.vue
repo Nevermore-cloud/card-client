@@ -1,5 +1,5 @@
 <template>
-  <div class="my-deck-card">
+  <div class="presets-deck-card">
     <!-- 搜索栏 -->
     <SearchBar
       v-model="keyword"
@@ -21,16 +21,15 @@
           :key="card.id + index"
           :idx="index"
           :card="card"
-          :showDelete="showDelete"
+          :showDelete="false"
           @view="handleViewCard"
-          @delete="handleDeleteCard"
         />
       </template>
       <div
         v-else-if="deckCards.length > 0 && filteredCards.length === 0"
         class="search-no-results"
       >
-        <p>没有匹配的卡组</p>
+        <p>没有匹配的卡牌</p>
         <img src="" alt="空卡组提示" />
       </div>
       <div v-else-if="deckCards.length == 0" class="empty-state">
@@ -53,17 +52,6 @@
           返回卡组
         </van-button>
       </div>
-      <!-- 添加卡牌按钮 -->
-      <div class="add-card">
-        <van-button
-          class="add-btn"
-          type="primary"
-          round
-          icon="plus"
-          @click="handleAddCard"
-          >添加卡牌</van-button
-        >
-      </div>
     </div>
 
     <!-- 卡牌详情弹窗 -->
@@ -71,14 +59,6 @@
       v-model:show="showDetailDialog"
       :cards="filteredCards"
       :initialIndex="currentCardIndex"
-    />
-
-    <!-- 添加卡牌到卡组中去 -->
-    <!-- 添加卡牌弹窗 -->
-    <AddCardsToDeckPopup
-      v-model:show="showAddCardPopup"
-      :deck-id="deckId"
-      @submit="handleSubmitAddCards"
     />
   </div>
 </template>
@@ -92,14 +72,9 @@ import SearchBar from "@/components/SearchBar.vue";
 import Card from "@/components/Card.vue";
 import type { CardType } from "@/types";
 
-// getMyAllCardsApi
-import { getCardsByDeckIdApi } from "@/api/cardApi";
+import { getCardsByDeckIdApi } from "@/api/systemCardsApi";
 import { removeCardFromMyDecksApi, addCardsToMyDecksApi } from "@/api/decksApi";
 import CardDetailDialog from "@/components/CardDetailDialog.vue";
-import AddCardsToDeckPopup from "@/components/AddCardsToDeckPopup.vue";
-
-// 是否显示卡牌删除按钮
-const showDelete = ref(true);
 
 const route = useRoute();
 const router = useRouter();
@@ -117,8 +92,6 @@ const filteredCards = ref<CardType[]>([]); // 搜索过滤后的卡牌
 // 详情弹窗部分
 const showDetailDialog = ref(false);
 const currentCardIndex = ref(0);
-// 添加卡牌弹窗
-const showAddCardPopup = ref(false);
 
 // ------------------ 方法 ------------------
 // 获取卡组卡牌
@@ -163,32 +136,6 @@ const handleReturnMyDecks = () => {
   router.back();
 };
 
-// 删除卡牌  这里是从卡组中移除，不是卡牌库
-const handleDeleteCard = async (id: number, idx?: number) => {
-  console.log("卡牌id", id);
-  console.log("卡牌idx", idx);
-
-  const confirmed = window.confirm("确定删除这张卡牌吗？");
-  // const confirmDelete = confirm("确认删除该卡牌吗？");
-  if (!confirmed) return;
-
-  loading.value = true;
-
-  try {
-    const res = await removeCardFromMyDecksApi(deckId.value, id, idx ?? 0);
-    if (res.success) {
-      await fetchDeckCards();
-      showToast("删除成功");
-    } else {
-      console.log("删除失败");
-      // 删除失败对应的处理代码
-    }
-  } catch (error) {
-  } finally {
-    loading.value = false;
-  }
-};
-
 // 查看卡牌详情
 const handleViewCard = async (card: CardType, idx?: number) => {
   // console.log("序号", idx);
@@ -200,32 +147,6 @@ const handleViewCard = async (card: CardType, idx?: number) => {
   );
   if (currentCardIndex.value === -1) currentCardIndex.value = 0;
   showDetailDialog.value = true;
-};
-
-// 卡组添加卡牌
-const handleAddCard = () => {
-  console.log("tianj1a");
-  showAddCardPopup.value = true;
-};
-// 添加卡牌到卡组
-const handleSubmitAddCards = async ({
-  deckId,
-  cardIds,
-}: {
-  deckId: number;
-  cardIds: number[];
-}) => {
-  try {
-    const res = await addCardsToMyDecksApi(deckId, cardIds);
-    if (res.success) {
-      showToast(res.error);
-      await fetchDeckCards(); // ✅ 刷新卡组
-    } else {
-      showToast(res.error || "添加失败");
-    }
-  } catch (err) {
-    showToast("请求出错");
-  }
 };
 
 onMounted(async () => {
@@ -246,7 +167,7 @@ onMounted(async () => {
 });
 </script>
 <style scoped lang="scss">
-.my-deck-card {
+.presets-deck-card {
   padding: 20px;
   position: relative;
   min-height: 100vh;

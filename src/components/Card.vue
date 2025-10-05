@@ -32,7 +32,7 @@
         name="edit"
         @click.stop="emitEdit"
       />
-      <van-icon name="delete" @click.stop="emitDelete" />
+      <van-icon v-if="showDelete" name="delete" @click.stop="emitDelete" />
     </div>
   </div>
 </template>
@@ -40,6 +40,7 @@
 <script lang="ts" setup>
 import type { CardType } from "@/types/card";
 import { useRoute } from "vue-router";
+import { computed } from "vue";
 
 // 获取当前路由对象
 const route = useRoute();
@@ -51,6 +52,7 @@ console.log("route.name", route.name);
 const props = defineProps<{
   card: CardType;
   idx?: number;
+  showDelete?: boolean; // 默认 true
 }>();
 
 /**
@@ -67,6 +69,9 @@ const emit = defineEmits<{
   (e: "edit", card: CardType): void;
   (e: "delete", id: number, idx?: number): void;
 }>();
+
+// 默认值处理
+const showDelete = computed(() => props.showDelete ?? true);
 
 /**
  * 子组件内部封装的事件触发函数

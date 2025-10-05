@@ -20,6 +20,9 @@
           v-for="deck in filteredDecks"
           :key="deck.id"
           :deck="deck"
+          :showAdd="false"
+          :showEdit="true"
+          :showDel="true"
           @view="handleViewDeck"
           @edit="handleEditDeck"
           @delete="handleDeleteDeck"
@@ -66,7 +69,7 @@ import { showToast, showConfirmDialog } from "vant";
 import SearchBar from "@/components/SearchBar.vue";
 import MyDeck from "@/components/Deck.vue";
 import DeckFormDialog from "@/components/DeckFormDialog.vue";
-import type { UserDeck } from "@/types/deck";
+import type { UserDeck, DeckType } from "@/types/deck";
 import {
   getMyDecksApi,
   createMyDecksApi,
@@ -195,7 +198,7 @@ const handleDeleteDeck = async (deck: UserDeck) => {
 };
 
 // 查看卡组详情
-const handleViewDeck = (deck: UserDeck) => {
+const handleViewDeck = (deck: DeckType) => {
   if (!deck) {
     console.error("无效的卡组：", deck);
     return;

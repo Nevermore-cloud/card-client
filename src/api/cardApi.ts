@@ -69,27 +69,14 @@ import type { CardType } from "@/types/card";
 import { myCardsMock } from "@/mock/cardsMock"; // 假设已有
 import { getMyDecksApi } from "@/api/decksApi";
 import { delay } from "@/utils/delay";
-
-// 我的卡牌数据存储 key
-const STORAGE_KEY = "cards_mock_user1";
-
-// 从 localStorage 取数据 卡牌
-function getStoredCards(): CardType[] {
-  const data = localStorage.getItem(STORAGE_KEY);
-  return data ? JSON.parse(data) : [];
-}
-
-// 存入 localStorage 卡牌
-function setStoredCards(cards: CardType[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
-}
+import { getStoredMyCards, setStoredMyCards } from "@/storage/userCards";
 
 /**
  * 获取我的所有卡牌（缓存优先 + 后台更新）
  */
 export const getMyAllCardsApi = async (): Promise<{ data: CardType[] }> => {
   // 1. 先查缓存
-  const cached = getStoredCards();
+  const cached = getStoredMyCards();
   if (cached.length > 0) {
     refreshCardsInBackground();
     return { data: cached }; // ✅ 保持 res.data
@@ -97,7 +84,7 @@ export const getMyAllCardsApi = async (): Promise<{ data: CardType[] }> => {
 
   // 2. 缓存没有 → 模拟请求
   await delay(300);
-  setStoredCards(myCardsMock);
+  setStoredMyCards(myCardsMock);
   return { data: myCardsMock };
 };
 
@@ -154,8 +141,10 @@ export const getCardsByDeckIdApi = async (
   const cardsRes = await getMyAllCardsApi();
   const allCards = cardsRes.data;
 
-  // 3. 根据 cardIds 过滤
-  const deckCards = allCards.filter((card) => deck.cardIds.includes(card.id));
+  // 3. 根据 cardIds 构建卡牌数组，保留重复与顺序
+  const deckCards: CardType[] = deck.cardIds
+    .map((id) => allCards.find((c) => c.id === id))
+    .filter((c): c is CardType => !!c); // 过滤掉找不到的情况
 
   // 模拟延迟
   await delay(200);
@@ -170,14 +159,14 @@ export const deleteCardApi = async (id: number): Promise<void> => {
   await delay(200);
   // 这里删除的是缓存里的
   // 删除我的卡牌
-  const cards = getStoredCards().filter((c) => c.id !== id);
+  const cards = getStoredMyCards().filter((c) => c.id !== id);
   // 删除卡牌时，也要从所有卡组中移除该卡牌
   const decks = getStoredMyDecks().map((deck) => ({
     ...deck,
     cardIds: deck.cardIds.filter((cardId) => cardId !== id),
   }));
   setStoredMyDecks(decks);
-  setStoredCards(cards);
+  setStoredMyCards(cards);
 };
 
 /**
@@ -188,14 +177,14 @@ export const deleteCardApi = async (id: number): Promise<void> => {
 export const addCardApi = async (card: CardType): Promise<CardType> => {
   await delay(200);
 
-  const stored = getStoredCards();
+  const stored = getStoredMyCards();
 
   // 模拟后端生成 id：取现有最大 id + 1
   const newId = stored.length ? Math.max(...stored.map((c) => c.id)) + 1 : 1;
 
   const newCard: CardType = { ...card, id: newId };
   stored.push(newCard);
-  setStoredCards(stored);
+  setStoredMyCards(stored);
 
   return newCard;
 };
@@ -208,7 +197,7 @@ export const addCardApi = async (card: CardType): Promise<CardType> => {
 export const updateCardApi = async (card: CardType): Promise<CardType> => {
   await delay(200);
 
-  const stored = getStoredCards();
+  const stored = getStoredMyCards();
 
   const index = stored.findIndex((c) => c.id === card.id);
   if (index === -1) {
@@ -217,7 +206,7 @@ export const updateCardApi = async (card: CardType): Promise<CardType> => {
 
   // 更新卡片
   stored[index] = { ...stored[index], ...card };
-  setStoredCards(stored);
+  setStoredMyCards(stored);
 
   return stored[index];
 };

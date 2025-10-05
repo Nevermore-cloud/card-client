@@ -37,6 +37,7 @@
         v-for="card in filteredCards"
         :key="card.id"
         :card="card"
+        :showDelete="showDelete"
         @view="handleViewCard"
         @edit="handleEditCard"
         @delete="handleDeleteCard"
@@ -78,6 +79,7 @@ import { useCardDialogStore } from "@/stores/cardDialog";
 const store = useCardDialogStore();
 
 const loading = ref(false); // 模拟加载状态
+const showDelete = ref(true);
 const myCards = ref<CardType[]>([]); // 卡牌数据（初始模拟数据）
 
 // 搜索相关
